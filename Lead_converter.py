@@ -85,7 +85,7 @@ dim = len(mat[0]['val'])
 
 detectors = Detectors(fs)
 
-while i < 1:
+while i < dim:
     sig = mat[0]['val'][i][2000:4000] #mat[sample]['val'][lead][window]
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=(10,5))
     Low_filt = butter_lowpass_filter(sig, high, fs, 5)
