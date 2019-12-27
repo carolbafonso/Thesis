@@ -86,6 +86,7 @@ new_matrix = []
 
 detectors = Detectors(fs)
 
+<<<<<<< HEAD
 while i < 1:
     sig = mat[0]['val'][i] #mat[sample]['val'][lead][window]
     print("sig=", sig)
@@ -93,6 +94,11 @@ while i < 1:
      
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(10,5))
     
+=======
+while i < dim:
+    sig = mat[0]['val'][i][2000:4000] #mat[sample]['val'][lead][window]
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=(10,5))
+>>>>>>> be03c44e1181be53dc140911c3a29018f55ad47a
     Low_filt = butter_lowpass_filter(sig, high, fs, 5)
     High_filt = butter_highpass_filter(Low_filt, low, fs, 5)
     #new_signal = cut_signal(sig,r_peaks, 0) 
