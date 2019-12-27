@@ -47,22 +47,22 @@ def butter_highpass_filter(data, cutoff, fs, order=5):
 def cut_signal(np_array, peaks, fs):
     #recive signal with peak r detected
     #cut window [p_max-0.2:p_max+0.4]
-    print("np_array=", np_array)
     
     for pp in peaks:
         p_max = pp
-    
+        d = len(np_array)
         l = int(p_max - fs*0.2)
         h = int(p_max + fs*0.45)
         print("l1=", l)
         print("h1=" , h)
         print("array[0] = ", np_array)
-    
-        sig = np_array[l:h]
-        print("sig=", sig)
-    
-        plt.plot(np.linspace(l, h, num=len(sig)), sig)
-        plt.show()
+        
+        if l > np_array[0] or h < np_array[d-1]:
+            sig = np_array[l:h]
+            #print("sig=", sig)
+            plt.plot(np.linspace(l, h, num=len(sig)), sig)
+            plt.show()
+            
 
 #########   
 # MAIN #     
@@ -86,22 +86,14 @@ new_matrix = []
 
 detectors = Detectors(fs)
 
-<<<<<<< HEAD
-while i < 1:
-    sig = mat[0]['val'][i] #mat[sample]['val'][lead][window]
-    print("sig=", sig)
-    #new_matrix.append(sig)
-     
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(10,5))
-    
-=======
+      
+
 while i < dim:
     sig = mat[0]['val'][i][2000:4000] #mat[sample]['val'][lead][window]
-    fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=(10,5))
->>>>>>> be03c44e1181be53dc140911c3a29018f55ad47a
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(10,5))
+    
     Low_filt = butter_lowpass_filter(sig, high, fs, 5)
-    High_filt = butter_highpass_filter(Low_filt, low, fs, 5)
-    #new_signal = cut_signal(sig,r_peaks, 0) 
+    High_filt = butter_highpass_filter(Low_filt, low, fs, 5) 
     
     ax1.plot(np.linspace(0,len(sig),num=len(sig)), sig, color='lightblue', label='Normal Signal')
     ax2.plot(np.linspace(0,len(sig),num=len(High_filt)), High_filt, color='black', label='Filtered signal')
