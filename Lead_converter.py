@@ -9,6 +9,7 @@ import scipy.io
 import glob
 import numpy as np
 import sys
+import pickle
 
 from scipy.signal import butter, lfilter, filtfilt
 from detectors_mod import Detectors
@@ -63,18 +64,21 @@ def cut_signal(np_array, peaks, fs):
         d = len(np_array)
         l = int(p_max - fs*0.2)
         h = int(p_max + fs*0.45)
+        '''
         print("l1=", l)
         print("h1=" , h)
         print("array[0] = ", np_array)
+        '''
         
         if l > np_array[0] or h < np_array[d-1]:
            sig = np_array[l:h]
-           #print("sig=", sig)
            b = 2*(sig - np.min(sig))/(np.max(sig) - np.min(sig)) - 1
-           plt.plot(np.linspace(l, h, num=len(b)), b)
-           plt.show()
+           #plt.plot(np.linspace(l, h, num=len(b)), b)
+           #plt.show()
              
     return sig
+
+
 
     
 ################            
@@ -121,63 +125,85 @@ def autoencoder(M, X_train):
 #data
 files = [file for file in glob.glob('PTB/PTB/*.mat')]
 mat = []
+mat_t = []
+count = 0
+for f in files:
+    count += 1
+    pf = scipy.io.loadmat(f)
+    if count <= 349:
+        mat.append(pf)
+    else:
+        mat_t.append(pf)
+
+print(len(mat))
+print(len(mat_t))
 
 #filter
 fs = 1000
 low = 1
 high = 40
+dim = len(mat[0]['val'])
+filename = 'data.pk'
 
-
-X_train = list()
-X_test = list()
+#DATA#
+def data_sig(mat):
+    
+    X_data = {'0':[], '1': [], '2': [], '3': [], '4': [], '5': [], '6': [], '7': [], '8': [],
+               '9': [], '10': [], '11': [],'12': [],'13': [],'14': [], '15': []}
+    
+    i=0
+    count = 0
+    while i < len(mat):
+        j = 0
+        count += 1
+        print("new = ", count)
+        while j < dim:
+            sig = mat[i]['val'][j] #mat[sample]['val'][lead][window]
+            
+            #fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(10,5))
+            
+            Low_filt = butter_lowpass_filter(sig, high, fs, 5)
+            High_filt = butter_highpass_filter(Low_filt, low, fs, 5) 
+                
+            #ax1.plot(np.linspace(0,len(sig),num=len(sig)), sig, color='lightblue', label='Normal Signal')
+            #ax2.plot(np.linspace(0,len(sig),num=len(High_filt)), High_filt, color='black', label='Filtered signal')
+            
+            r_peaks = detectors.pan_tompkins_detector(sig)
+            #print("r_peaks_lead1=", r_peaks)
+            
+            r_peaks = np.array(r_peaks)
+            
+            ax3 = cut_signal(High_filt,r_peaks, fs) 
+            
+            X_data[str(j)].append(ax3)
+            
+            j += 1
+        
+        i += 1 
+    
+    for j in range(16):
+        X_data[str(j)] = np.array(X_data[str(j)])
+    
+    return X_data
 
 detectors = Detectors(fs)
 
-#FOR EVERY FILE:   <<<<<<<<<
-
-# FIRST: DETECT PEAKS IN LEAD 1
-# SECOND: CUT HEARTBEATS IN EVERY LEAD AT LOCATIONS DETECTED AT LEAD 1
-for f in files:
-    pf = scipy.io.loadmat(f)
-    mat.append(pf)
-    dim = len(mat[0]['val'])
-    i = 0
-    while i < dim:
-        sig = mat[0]['val'][i] #mat[sample]['val'][lead][window]
+X_train = data_sig(mat)
+X_test = data_sig(mat_t)
     
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True, figsize=(10,5))
-        
-        Low_filt = butter_lowpass_filter(sig, high, fs, 5)
-        High_filt = butter_highpass_filter(Low_filt, low, fs, 5) 
-            
-        #ax1.plot(np.linspace(0,len(sig),num=len(sig)), sig, color='lightblue', label='Normal Signal')
-        #ax2.plot(np.linspace(0,len(sig),num=len(High_filt)), High_filt, color='black', label='Filtered signal')
-        
-        r_peaks = detectors.pan_tompkins_detector(sig)
-        print("r_peaks_lead1=", r_peaks)
-        r_peaks = np.array(r_peaks)
-        ax3 = cut_signal(High_filt,r_peaks, fs) 
-        
-        if(len(X_train) == 200):
-            X_test.append(pf)
-        else:
-            X_train.append(ax3)  
-        
-        i += 1        
 
-print("X_train", len(X_train))
-print("X_test", len(X_test))
+with open(filename, 'wb') as hf:
+    pickle.dump((X_train, X_test), hf)
+   
+with open(filename, 'rb') as hf:
+    data = pickle.load(hf)
     
 # NO fim de ir buscar picos a todos os ficheiros:
- 
-sys.exit()
 
-X_train = np.array(X_train)
-print(X_train.shape)
-
-model, history = autoencoder((len(X_train[0])), X_train)
-
+model, history = autoencoder(len(X_train['0'][0]), X_train['0'])
     
 print(history.history['loss'])
+
+
     
 
