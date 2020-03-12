@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import scipy.io
 import glob
 import numpy as np
-import sys
 import pickle
 
 from scipy.signal import butter, lfilter, filtfilt
@@ -64,18 +63,13 @@ def cut_signal(np_array, peaks, fs):
         d = len(np_array)
         l = int(p_max - fs*0.2)
         h = int(p_max + fs*0.45)
-        '''
-        print("l1=", l)
-        print("h1=" , h)
-        print("array[0] = ", np_array)
-        '''
         
         if l > np_array[0] or h < np_array[d-1]:
            sig = np_array[l:h]
            b = 2*(sig - np.min(sig))/(np.max(sig) - np.min(sig)) - 1
-           #plt.plot(np.linspace(l, h, num=len(b)), b)
-           #plt.show()
-             
+           plt.plot(np.linspace(l, h, num=len(b)), b)
+           plt.show()
+
     return sig
 
 
@@ -131,26 +125,25 @@ for f in files:
     count += 1
     pf = scipy.io.loadmat(f)
     if count <= 349:
+        #train
         mat.append(pf)
     else:
+        #test
         mat_t.append(pf)
-
-print(len(mat))
-print(len(mat_t))
 
 #filter
 fs = 1000
 low = 1
 high = 40
-dim = len(mat[0]['val'])
-filename = 'data.pk'
+filename = 'data_1.pk'
 
 #DATA#
 def data_sig(mat):
     
-    X_data = {'0':[], '1': [], '2': [], '3': [], '4': [], '5': [], '6': [], '7': [], '8': [],
-               '9': [], '10': [], '11': [],'12': [],'13': [],'14': [], '15': []}
+    dim = len(mat[0]['val'])
     
+    X_data = {'0':[], '1': [], '2': [], '3': [], '4': [], '5': [], '6': [], '7': [], '8': [],
+               '9': [], '10': [], '11': [],'12': [],'13': [],'14': []}
     i=0
     count = 0
     while i < len(mat):
@@ -169,21 +162,23 @@ def data_sig(mat):
             #ax2.plot(np.linspace(0,len(sig),num=len(High_filt)), High_filt, color='black', label='Filtered signal')
             
             r_peaks = detectors.pan_tompkins_detector(sig)
-            #print("r_peaks_lead1=", r_peaks)
             
             r_peaks = np.array(r_peaks)
             
             ax3 = cut_signal(High_filt,r_peaks, fs) 
             
-            X_data[str(j)].append(ax3)
+            #print("tamanhos= ", len(mat[i]['val'][j]))
+            
+            if (len(ax3) == 650):
+                X_data[str(j)].append(ax3)
             
             j += 1
         
         i += 1 
     
-    for j in range(16):
+    for j in range(15):
         X_data[str(j)] = np.array(X_data[str(j)])
-    
+
     return X_data
 
 detectors = Detectors(fs)
@@ -197,13 +192,7 @@ with open(filename, 'wb') as hf:
    
 with open(filename, 'rb') as hf:
     data = pickle.load(hf)
-    
-# NO fim de ir buscar picos a todos os ficheiros:
-
-model, history = autoencoder(len(X_train['0'][0]), X_train['0'])
-    
-print(history.history['loss'])
+   
 
 
     
-
